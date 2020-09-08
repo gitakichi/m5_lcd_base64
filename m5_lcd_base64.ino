@@ -6,6 +6,8 @@
 // イメージデータ
 #include "data.h"                   // 画像データの読み込み
 
+
+
 // クライアントIDをランダム生成するための文字列
 static const char alphanum[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
@@ -116,6 +118,13 @@ int base64Decode_ppm(const char* src, unsigned short *dtc) {
 // メッセージを受け取ったらシリアルにプリント
 void callback(char* topic, byte* payload, unsigned int length) {
   // PubSubClient.hで定義されているMQTTの最大パケットサイズ
-  char buffer[MQTT_MAX_PACKET_SIZE];
-  Serial.println("received-lastest");
+  //Serial.println("received-lastest");
+
+  //char buffer[1024];
+  //snprintf(buffer, sizeof(buffer), "%s", payload);
+  //Serial.println(buffer);
+  for (int i = 0; i < length; i++) { //　メッセージを表示
+    Serial.print((char)payload[i]);
+  }
+  Serial.print("\n");
 }
