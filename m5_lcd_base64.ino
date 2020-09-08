@@ -6,8 +6,6 @@
 // イメージデータ
 #include "data.h"                   // 画像データの読み込み
 
-
-
 // クライアントIDをランダム生成するための文字列
 static const char alphanum[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
@@ -36,12 +34,14 @@ void setup() {
 
   mqttClient.setServer(server, 1883);
 
+  /*
   unsigned short fixed[2940];
   base64Decode_ppm(b64_str, fixed);
 
   M5.Lcd.startWrite();// 描画開始(明示的に宣言すると早くなる)
   M5.Lcd.pushImage(0, 0, imgWidth, imgHeight, fixed);
   M5.Lcd.endWrite();
+  */
 }
 
 void loop() {
@@ -72,6 +72,7 @@ void reConnect() { // 接続が切れた際に再接続する
   }
 }
 
+//HEXダンプとBase64の両方に対応させたい
 //http://yamatyuu.net/computer/program/vc2013/base64/index.html
 inline int base64_to_6bit(char c) {
   if (c == '=')
@@ -87,11 +88,11 @@ inline int base64_to_6bit(char c) {
   return (c - 'A');
 }
 
-int base64Decode_ppm(const char* src, unsigned short *dtc) {
+int base64Decode_ppm(byte* src, unsigned short *dtc,int src_len) {
   char o0, o1, o2, o3;
   char h0, h1, h2, r_color, g_color, b_color;
-
-  while (*src != '\0') {
+  int i = 0 ;
+  while (*src != '\0' && i < src_len) {
     //Base64 to HEX
     o0 = base64_to_6bit(*src);
     o1 = base64_to_6bit(*(src + 1));
@@ -111,20 +112,27 @@ int base64Decode_ppm(const char* src, unsigned short *dtc) {
     //address increment
     dtc++;
     src += 4;
+    i++;
   }
   return 0;
 }
 
 // メッセージを受け取ったらシリアルにプリント
 void callback(char* topic, byte* payload, unsigned int length) {
-  // PubSubClient.hで定義されているMQTTの最大パケットサイズ
-  //Serial.println("received-lastest");
-
-  //char buffer[1024];
-  //snprintf(buffer, sizeof(buffer), "%s", payload);
-  //Serial.println(buffer);
+  
+  Serial.println(length);
+  /*
   for (int i = 0; i < length; i++) { //　メッセージを表示
     Serial.print((char)payload[i]);
   }
   Serial.print("\n");
+  */
+
+  unsigned short fixed[2940];
+  base64Decode_ppm(payload, fixed, length);
+
+  M5.Lcd.startWrite();// 描画開始(明示的に宣言すると早くなる)
+  M5.Lcd.pushImage(0, 0, imgWidth, imgHeight, fixed);
+  M5.Lcd.endWrite();
+  
 }
