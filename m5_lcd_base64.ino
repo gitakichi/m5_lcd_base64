@@ -62,7 +62,7 @@ void loop() {
 
     tmp_len = base64Decode(received, tmp, received_len);
     Serial.println(tmp_len);
-    //ppm_rgb565(tmp, fixed, tmp_len);
+    ppm_rgb565(tmp, fixed, tmp_len);
 
     
     //M5.Lcd.startWrite();// 描画開始(明示的に宣言すると早くなる)
@@ -157,7 +157,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 }
 
 int base64Decode(byte* src, byte *dtc, int src_len) {
-  char o0, o1, o2, o3;
+  byte o0, o1, o2, o3;
   int i = 0 ;
   
   while (*src != '\0' && i < src_len) {
@@ -181,31 +181,29 @@ int base64Decode(byte* src, byte *dtc, int src_len) {
 
 
 int ppm_rgb565(byte* src, unsigned short *dtc, int src_len) {
-  char r_color, g_color, b_color;
   int line = 0;
   int i = 0;
 
   //sscanfでサイズ可変に対応させる予定
   //PPM画像のトークンを無視する
-  while (*src != '\0' && line < 4) {
+  while (line < 4) {
     if(*src == '\n'){
       line++;
     }
     src++;
     i++;
   }
+  //Serial.println(i);
   
   while (i < src_len) {//while (*src != '\0')はバイナリだから違う
     //HEX to RGB565
-    r_color = (*src) >> 3;
-    g_color = *(src + 1) >> 2;
-    b_color = *(src + 2) >> 3;
-    *dtc = r_color << 11 | g_color << 5 | b_color;
+    *dtc = (0xf8 & *src) << 8 |  (0xfc & *(src + 1)) << 3 | (0xf8 & *(src + 2));
 
     //address increment
     i += 3;
     dtc++;
     src += 3;
   }
+  
   return 0;
 }
