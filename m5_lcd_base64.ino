@@ -3,8 +3,10 @@
 #include <PubSubClient.h>
 #include "secret.h"//WIFIとMQTTのパスワード等を記載
 
-const uint16_t imgWidth = 60;//#include "data.h"
-const uint16_t imgHeight = 49;
+#include "data.h"
+
+//const uint16_t imgWidth = 60;//#include "data.h"
+//const uint16_t imgHeight = 49;
 // クライアントIDをランダム生成するための文字列
 static const char alphanum[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
@@ -58,16 +60,16 @@ void loop() {
 
   if (flag == 1) {
     flag = 0;
-    //base64Decode_ppm(received, fixed, received_len);
+    base64Decode_ppm(b64_str, fixed, received_len);
 
-    tmp_len = base64Decode(received, tmp, received_len);
-    Serial.println(tmp_len);
-    ppm_rgb565(tmp, fixed, tmp_len);
+    //tmp_len = base64Decode(received, tmp, received_len);
+    //Serial.println(tmp_len);
+    //ppm_rgb565(tmp, fixed, tmp_len);
 
     
-    //M5.Lcd.startWrite();// 描画開始(明示的に宣言すると早くなる)
-    //M5.Lcd.pushImage(0, 0, imgWidth, imgHeight, fixed);
-    //M5.Lcd.endWrite();
+    M5.Lcd.startWrite();// 描画開始(明示的に宣言すると早くなる)
+    M5.Lcd.pushImage(0, 0, imgWidth, imgHeight, fixed);
+    M5.Lcd.endWrite();
   }
 }
 
@@ -126,15 +128,16 @@ int base64Decode_ppm(byte* src, unsigned short *dtc, int src_len) {
     h2 = ((o2 & 0x3) << 6) | (o3 & 0x3f);
 
     //HEX to RGB565
-    r_color = h0 >> 3;
-    g_color = h1 >> 2;
-    b_color = h2 >> 3;
-    *dtc = r_color << 11 | g_color << 5 | b_color;
+    //r_color = h0 >> 3;
+    //g_color = h1 >> 2;
+    //b_color = h2 >> 3;
+    //*dtc = r_color << 11 | g_color << 5 | b_color;
+    *dtc = (0xf8 & h0) << 8 |  (0xfc & h1) << 3 | (0xf8 & h2);
 
     //address increment
     dtc++;
     src += 4;
-    i++;
+    i += 4;
   }
   return 0;
 }
@@ -158,7 +161,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 int base64Decode(byte* src, byte *dtc, int src_len) {
   byte o0, o1, o2, o3;
-  int i = 0 ;
+  int i = 0,j = 0;
   
   while (*src != '\0' && i < src_len) {
     //Base64 to HEX
@@ -174,9 +177,10 @@ int base64Decode(byte* src, byte *dtc, int src_len) {
     //address increment
     dtc += 3;
     src += 4;
-    i += 3;
+    i += 4;
+    j += 3;
   }
-  return i;
+  return j;
 }
 
 
@@ -193,17 +197,22 @@ int ppm_rgb565(byte* src, unsigned short *dtc, int src_len) {
     src++;
     i++;
   }
-  //Serial.println(i);
+  Serial.println(i);
+  Serial.println(src_len);
+  
   
   while (i < src_len) {//while (*src != '\0')はバイナリだから違う
     //HEX to RGB565
     *dtc = (0xf8 & *src) << 8 |  (0xfc & *(src + 1)) << 3 | (0xf8 & *(src + 2));
-
     //address increment
     i += 3;
     dtc++;
     src += 3;
+    //i++;
   }
+  Serial.println(i);
+  
+  
   
   return 0;
 }
