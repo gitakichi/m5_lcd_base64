@@ -21,9 +21,10 @@ int ppm_rgb565();
 
 int flag = 0;
 unsigned short fixed[3000];
-byte tmp[9000];
+byte tmp[15000];
 byte *received;//byte received[15000];
 int received_len;
+int tmp_len;
 
 void setup() {
   //Serial.println("boot");
@@ -57,15 +58,16 @@ void loop() {
 
   if (flag == 1) {
     flag = 0;
-    base64Decode_ppm(received, fixed, received_len);
+    //base64Decode_ppm(received, fixed, received_len);
 
-    //base64Decode(received, tmp, received_len);
-    //ppm_rgb565(tmp, fixed);
+    tmp_len = base64Decode(received, tmp, received_len);
+    Serial.println(tmp_len);
+    //ppm_rgb565(tmp, fixed, tmp_len);
 
     
-    M5.Lcd.startWrite();// 描画開始(明示的に宣言すると早くなる)
-    M5.Lcd.pushImage(0, 0, imgWidth, imgHeight, fixed);
-    M5.Lcd.endWrite();
+    //M5.Lcd.startWrite();// 描画開始(明示的に宣言すると早くなる)
+    //M5.Lcd.pushImage(0, 0, imgWidth, imgHeight, fixed);
+    //M5.Lcd.endWrite();
   }
 }
 
@@ -172,15 +174,16 @@ int base64Decode(byte* src, byte *dtc, int src_len) {
     //address increment
     dtc += 3;
     src += 4;
-    i++;
+    i += 3;
   }
-  return 0;
+  return i;
 }
 
 
-int ppm_rgb565(byte* src, unsigned short *dtc) {
+int ppm_rgb565(byte* src, unsigned short *dtc, int src_len) {
   char r_color, g_color, b_color;
   int line = 0;
+  int i = 0;
 
   //sscanfでサイズ可変に対応させる予定
   //PPM画像のトークンを無視する
@@ -189,9 +192,10 @@ int ppm_rgb565(byte* src, unsigned short *dtc) {
       line++;
     }
     src++;
+    i++;
   }
   
-  while (*src != '\0') {
+  while (i < src_len) {//while (*src != '\0')はバイナリだから違う
     //HEX to RGB565
     r_color = (*src) >> 3;
     g_color = *(src + 1) >> 2;
@@ -199,6 +203,7 @@ int ppm_rgb565(byte* src, unsigned short *dtc) {
     *dtc = r_color << 11 | g_color << 5 | b_color;
 
     //address increment
+    i += 3;
     dtc++;
     src += 3;
   }
