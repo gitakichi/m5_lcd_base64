@@ -2,7 +2,6 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include "secret.h"//WIFIとMQTTのパスワード等を記載
-
 // イメージデータ
 #include "data.h"                   // 画像データの読み込み
 
@@ -15,6 +14,11 @@ PubSubClient mqttClient(wifiClient);
 void reConnect();
 int base64_to_6bit();
 int base64Decode_ppm();
+
+int flag = 0;
+unsigned short fixed[3000];
+byte received[15000];
+int received_len;
 
 void setup() {
   //Serial.println("boot");
@@ -33,20 +37,30 @@ void setup() {
   Serial.println(" CONNECTED");
 
   mqttClient.setServer(server, 1883);
+  mqttClient.setBufferSize(15000);
+
 
   /*
-  unsigned short fixed[2940];
-  base64Decode_ppm(b64_str, fixed);
+    unsigned short fixed[2940];
+    base64Decode_ppm(b64_str, fixed);
 
-  M5.Lcd.startWrite();// 描画開始(明示的に宣言すると早くなる)
-  M5.Lcd.pushImage(0, 0, imgWidth, imgHeight, fixed);
-  M5.Lcd.endWrite();
+    M5.Lcd.startWrite();// 描画開始(明示的に宣言すると早くなる)
+    M5.Lcd.pushImage(0, 0, imgWidth, imgHeight, fixed);
+    M5.Lcd.endWrite();
   */
 }
 
 void loop() {
   reConnect();
   mqttClient.loop();
+
+  if (flag == 1) {
+    flag = 0;
+    base64Decode_ppm(received, fixed, received_len);
+    M5.Lcd.startWrite();// 描画開始(明示的に宣言すると早くなる)
+    M5.Lcd.pushImage(0, 0, imgWidth, imgHeight, fixed);
+    M5.Lcd.endWrite();
+  }
 }
 
 void reConnect() { // 接続が切れた際に再接続する
@@ -88,7 +102,7 @@ inline int base64_to_6bit(char c) {
   return (c - 'A');
 }
 
-int base64Decode_ppm(byte* src, unsigned short *dtc,int src_len) {
+int base64Decode_ppm(byte* src, unsigned short *dtc, int src_len) {
   char o0, o1, o2, o3;
   char h0, h1, h2, r_color, g_color, b_color;
   int i = 0 ;
@@ -101,7 +115,7 @@ int base64Decode_ppm(byte* src, unsigned short *dtc,int src_len) {
 
     h0 = (o0 << 2) | ((o1 & 0x30) >> 4);
     h1 = ((o1 & 0xf) << 4) | ((o2 & 0x3c) >> 2);
-    h2 = ((o2 & 0x3) << 6) | o3 & 0x3f;
+    h2 = ((o2 & 0x3) << 6) | (o3 & 0x3f);
 
     //HEX to RGB565
     r_color = h0 >> 3;
@@ -119,20 +133,15 @@ int base64Decode_ppm(byte* src, unsigned short *dtc,int src_len) {
 
 // メッセージを受け取ったらシリアルにプリント
 void callback(char* topic, byte* payload, unsigned int length) {
-  
+
   Serial.println(length);
-  /*
+  received_len = length;
+
   for (int i = 0; i < length; i++) { //　メッセージを表示
-    Serial.print((char)payload[i]);
+    //Serial.print((char)payload[i]);
+    *(received+i) =*(payload+i);
   }
-  Serial.print("\n");
-  */
+  //Serial.print("\n");
+  flag = 1;
 
-  unsigned short fixed[2940];
-  base64Decode_ppm(payload, fixed, length);
-
-  M5.Lcd.startWrite();// 描画開始(明示的に宣言すると早くなる)
-  M5.Lcd.pushImage(0, 0, imgWidth, imgHeight, fixed);
-  M5.Lcd.endWrite();
-  
 }
