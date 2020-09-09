@@ -2,9 +2,9 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include "secret.h"//WIFIとMQTTのパスワード等を記載
-// イメージデータ
-#include "data.h"                   // 画像データの読み込み
 
+const uint16_t imgWidth = 60;//#include "data.h"
+const uint16_t imgHeight = 49;
 // クライアントIDをランダム生成するための文字列
 static const char alphanum[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
@@ -17,7 +17,7 @@ int base64Decode_ppm();
 
 int flag = 0;
 unsigned short fixed[3000];
-byte received[15000];
+byte *received;//byte received[15000];
 int received_len;
 
 void setup() {
@@ -38,8 +38,6 @@ void setup() {
 
   mqttClient.setServer(server, 1883);
   mqttClient.setBufferSize(15000);
-
-
   /*
     unsigned short fixed[2940];
     base64Decode_ppm(b64_str, fixed);
@@ -136,12 +134,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   Serial.println(length);
   received_len = length;
-
+  /*
   for (int i = 0; i < length; i++) { //　メッセージを表示
     //Serial.print((char)payload[i]);
     *(received+i) =*(payload+i);
   }
   //Serial.print("\n");
+  */
+  received = payload;
   flag = 1;
-
+  
 }
