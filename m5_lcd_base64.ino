@@ -39,9 +39,7 @@ void setup() {
   mqttClient.setServer(server, 1883);
   mqttClient.setBufferSize(15000);
   /*
-    unsigned short fixed[2940];
     base64Decode_ppm(b64_str, fixed);
-
     M5.Lcd.startWrite();// 描画開始(明示的に宣言すると早くなる)
     M5.Lcd.pushImage(0, 0, imgWidth, imgHeight, fixed);
     M5.Lcd.endWrite();
